@@ -889,7 +889,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "prometheus_sql_adapter"
+name = "prometheus_null_adapter"
 version = "0.1.0"
 dependencies = [
  "cascara",

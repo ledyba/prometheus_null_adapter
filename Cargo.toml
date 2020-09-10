@@ -1,5 +1,5 @@
 [package]
-name = 'prometheus_sql_adapter'
+name = 'prometheus_null_adapter'
 version = '0.1.0'
 authors = ['Kaede Fujisaki <psi@7io.org>']
 edition = '2018'

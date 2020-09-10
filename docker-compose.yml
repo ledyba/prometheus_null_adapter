@@ -2,10 +2,10 @@
 version: '3.7'
 
 services:
-  prometheus_sql_adapter:
-    container_name: prometheus_sql_adapter
-    hostname: prometheus_sql_adapter
-    image: prometheus_sql_adapter
+  prometheus_null_adapter:
+    container_name: prometheus_null_adapter
+    hostname: prometheus_null_adapter
+    image: prometheus_null_adapter
     build:
       context: ./
     restart: always
