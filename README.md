@@ -1,4 +1,4 @@
-# [WIP] Prometheus "NULL" Remote Storage Adapter to create your own adapter!
+# Prometheus "NULL" Remote Storage Adapter to create your own!
 
  - [![Build on Linux](https://github.com/ledyba/prometheus_null_adapter/workflows/Build%20on%20Linux/badge.svg)](https://github.com/ledyba/prometheus_null_adapter/actions?query=workflow%3A%22Build+on+Linux%22)
    - [![Build single binary on Linux](https://github.com/ledyba/prometheus_null_adapter/workflows/Build%20single%20binary%20on%20Linux/badge.svg)](https://github.com/ledyba/prometheus_null_adapter/actions?query=workflow%3A%22Build+single+binary+on+Linux%22)
