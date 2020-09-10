@@ -63,6 +63,7 @@ fn web(m: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let index = warp::path::end().and_then(handlers::not_found);
     let router = index
       .or(writer)
+      .or(reader)
       .or(warp::any().and_then(handlers::not_found));
     warp::serve(router)
       .run(sock)
