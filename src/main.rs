@@ -39,7 +39,7 @@ fn web(m: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
   });
 
   let mut rt = tokio::runtime::Builder::new()
-    .core_threads(32)
+    .core_threads(num_cpus::get() + 1)
     .threaded_scheduler()
     .enable_all()
     .build()

@@ -19,6 +19,7 @@ cascara = "0.1.0"
 string-error = "0.1.0"
 snap = "1"
 protobuf = { version = "2", features = ["with-bytes"] }
+num_cpus = "1.0"
 
 [build-dependencies]
 protobuf-codegen-pure = "2.3"
