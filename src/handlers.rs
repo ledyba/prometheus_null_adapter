@@ -12,16 +12,14 @@ use warp::hyper::body::{Bytes, Body};
 use warp::reply::Reply;
 use warp::reject;
 use warp::http::uri;
-use warp::http::StatusCode;
 use warp::reply::Response;
 
 extern crate snap;
-use snap::raw::{Decoder, Encoder};
 
 use crate::context;
-use crate::proto;
-use crate::proto::remote::{WriteRequest, ReadRequest, ReadResponse};
+use crate::proto::remote::{WriteRequest, ReadRequest, ReadResponse, ChunkedReadResponse};
 use protobuf::Message;
+use crate::proto::remote::ReadRequest_ResponseType::STREAMED_XOR_CHUNKS;
 
 pub async fn not_found() -> Result<impl Reply, reject::Rejection> {
   Ok(warp::redirect(uri::Uri::from_str("/").unwrap()))
@@ -73,22 +71,44 @@ pub async fn read(conf: Arc<context::Context>, body: Bytes) -> Result<impl Reply
   for q in req.queries.iter() {
     info!("[R] {} -> {}", q.start_timestamp_ms, q.end_timestamp_ms);
   }
-  let mut resp = ReadResponse::new();
+  if req.accepted_response_types.iter().any(|t| t.eq(&STREAMED_XOR_CHUNKS)) {
+    let req = req;
+    let (mut sender, body) = Body::channel();
+    tokio::spawn(async move {
+      for q in &req.queries {
+        let mut resp = ChunkedReadResponse::new();
+        // Fill the response...
+        let resp_bytes = resp.write_to_bytes().unwrap();
+        sender.send_data(resp_bytes.into()).await.unwrap();
+      }
+    });
+    let resp_body = warp::http::Response::builder()
+      .status(200)
+      .header("Content-Type", "application/x-streamed-protobuf; proto=prometheus.ChunkedReadResponse")
+      .header("Content-Encoding", "")
+      .body(body)
+      .unwrap();
+    Ok(resp_body)
+  } else {
+    let mut resp = ReadResponse::new();
 
-  // return to client.
-  let resp_bytes_result = resp.write_to_bytes();
-  if resp_bytes_result.is_err() {
-    return Ok(create_error_response(500, resp_bytes_result.unwrap_err()));
+    // return to client.
+    let resp_bytes_result = resp.write_to_bytes();
+    if resp_bytes_result.is_err() {
+      return Ok(create_error_response(500, resp_bytes_result.unwrap_err()));
+    }
+    let resp_bytes_compress_result = snap::raw::Encoder::new().compress_vec(&resp_bytes_result.unwrap());
+    if resp_bytes_compress_result.is_err() {
+      return Ok(create_error_response(500, resp_bytes_compress_result.unwrap_err()));
+    }
+    let resp_bytes = resp_bytes_compress_result.unwrap();
+    let resp_body = warp::http::Response::builder()
+      .status(200)
+      .header("Content-Type", "application/x-protobuf")
+      .header("Content-Encoding", "snappy")
+      .body(Body::from(resp_bytes))
+      .unwrap();
+    Ok(resp_body)
   }
-  let resp_bytes_compress_result = Encoder::new().compress_vec(&resp_bytes_result.unwrap());
-  if resp_bytes_compress_result.is_err() {
-    return Ok(create_error_response(500, resp_bytes_compress_result.unwrap_err()));
-  }
-  let resp_bytes = resp_bytes_compress_result.unwrap();
-  let resp_body = warp::http::Response::builder()
-    .status(200)
-    .header("Content-Type", "")
-    .body(Body::from(resp_bytes))
-    .unwrap();
-  Ok(resp_body)
+
 }
